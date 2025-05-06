@@ -5,6 +5,8 @@ function Profile({ user, onUpdate }) {
   const [avatarFile, setAvatarFile] = useState(null)
   const [loading, setLoading] = useState(false)
   const [passwords, setPasswords] = useState({ current: '', new: '' })
+  const API_URL = import.meta.env.VITE_API_URL;
+
 
   const handleUpload = async () => {
     if (!avatarFile) return
@@ -13,7 +15,7 @@ function Profile({ user, onUpdate }) {
     formData.append('avatar', avatarFile)
 
     try {
-      const res = await fetch('http://localhost:3000/api/avatar', {
+      const res = await fetch('${API_URL}/avatar', {
         method: 'POST',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         body: formData,
@@ -35,7 +37,7 @@ function Profile({ user, onUpdate }) {
   const handleChangePassword = async () => {
     if (!passwords.current || !passwords.new) return
     try {
-      const res = await fetch('http://localhost:3000/api/change-password', {
+      const res = await fetch('${API_URL}/change-password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

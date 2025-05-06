@@ -21,9 +21,10 @@ function App() {
   const [tab, setTab] = useState('dashboard')
   const isAdmin = localStorage.getItem('is_admin') === 'true'
 
+  const API_URL = import.meta.env.VITE_API_URL;
   const handleLogin = async () => {
     try {
-      const res = await fetch('http://localhost:3000/api/login', {
+      const res = await fetch(`${API_URL}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(loginData),
@@ -44,7 +45,7 @@ function App() {
   }
 
   const fetchUsers = async () => {
-    const res = await fetch('http://localhost:3000/api/users', {
+    const res = await fetch('${API_URL}/users', {
       headers: { Authorization: `Bearer ${token}` },
     })
     const data = await res.json()
@@ -52,7 +53,7 @@ function App() {
   }
 
   const fetchItems = async () => {
-    const res = await fetch('http://localhost:3000/api/items', {
+    const res = await fetch('${API_URL}/items', {
       headers: { Authorization: `Bearer ${token}` },
     })
     const data = await res.json()
@@ -60,7 +61,7 @@ function App() {
   }
 
   const fetchPurchases = async () => {
-    const res = await fetch('http://localhost:3000/api/my-purchases', {
+    const res = await fetch('${API_URL}/my-purchases', {
       headers: { Authorization: `Bearer ${token}` },
     })
     const data = await res.json()
@@ -74,7 +75,7 @@ function App() {
   }
 
   const giveCoins = async (userId) => {
-    await fetch(`http://localhost:3000/api/users/${userId}/coins`, {
+    await fetch(`${API_URL}/users/${userId}/coins`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -87,7 +88,7 @@ function App() {
   }
 
   const deleteUser = async (userId) => {
-    await fetch(`http://localhost:3000/api/users/${userId}`, {
+    await fetch(`${API_URL}/users/${userId}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -96,7 +97,7 @@ function App() {
   }
 
   const deleteItem = async (itemId) => {
-    await fetch(`http://localhost:3000/api/items/${itemId}`, {
+    await fetch(`${API_URL}i/items/${itemId}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -104,7 +105,7 @@ function App() {
   }
 
   const buyItem = async (itemId) => {
-    const res = await fetch('http://localhost:3000/api/buy', {
+    const res = await fetch('${API_URL}/buy', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -123,7 +124,7 @@ function App() {
   }
 
   const addItem = async (item) => {
-    const res = await fetch('http://localhost:3000/api/items', {
+    const res = await fetch('${API_URL}/items', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

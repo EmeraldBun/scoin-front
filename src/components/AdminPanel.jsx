@@ -2,6 +2,7 @@ import { useState } from 'react'
 import CasinoSymbolsEditor from './CasinoSymbolsEditor'
 
 function AdminPanel({ users, currentUserId, giveCoins, deleteUser, items, deleteItem, addItem }) {
+  const API_URL = import.meta.env.VITE_API_URL;
   const [newUser, setNewUser] = useState({
     login: '',
     name: '',
@@ -12,7 +13,7 @@ function AdminPanel({ users, currentUserId, giveCoins, deleteUser, items, delete
 
   const handleUserCreate = async (e) => {
     e.preventDefault()
-    const res = await fetch('http://localhost:3000/api/register', {
+    const res = await fetch('${API_URL}/register', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

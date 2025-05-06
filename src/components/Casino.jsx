@@ -6,6 +6,7 @@ function Casino({ balance, refreshUser, role }) {
   const [spinning, setSpinning] = useState(false)
   const [result, setResult] = useState(null)
   const [spinIcons, setSpinIcons] = useState(["❓", "❓", "❓"])
+  const API_URL = import.meta.env.VITE_API_URL;
 
   const getCurrencyName = (role) => {
     switch (role) {
@@ -31,7 +32,7 @@ function Casino({ balance, refreshUser, role }) {
     }, 100)
 
     try {
-      const res = await fetch('http://localhost:3000/api/casino/spin', {
+      const res = await fetch('${API_URL}/casino/spin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

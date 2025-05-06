@@ -3,9 +3,11 @@ import { useEffect, useState } from 'react'
 function CasinoSymbolsEditor() {
   const [symbols, setSymbols] = useState([])
   const [loading, setLoading] = useState(false)
+  const API_URL = import.meta.env.VITE_API_URL;
+
 
   useEffect(() => {
-    fetch('http://localhost:3000/api/casino/symbols', {
+    fetch('${API_URL}casino/symbols', {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
     })
       .then((res) => res.json())
@@ -23,7 +25,7 @@ function CasinoSymbolsEditor() {
     const confirmed = confirm('Удалить этот символ?')
     if (!confirmed) return
 
-    const res = await fetch(`http://localhost:3000/api/casino/symbols/${id}`, {
+    const res = await fetch(`${API_URL}casino/symbols/${id}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
     })
@@ -40,7 +42,7 @@ function CasinoSymbolsEditor() {
     try {
       for (const s of symbols) {
         if (s.id) {
-          await fetch(`http://localhost:3000/api/casino/symbols/${s.id}`, {
+          await fetch(`${API_URL}casino/symbols/${s.id}`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
@@ -49,7 +51,7 @@ function CasinoSymbolsEditor() {
             body: JSON.stringify(s),
           })
         } else {
-          await fetch(`http://localhost:3000/api/casino/symbols`, {
+          await fetch(`${API_URL}casino/symbols`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
