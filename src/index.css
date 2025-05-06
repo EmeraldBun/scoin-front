@@ -1,0 +1,63 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-black text-white font-sans;
+  font-family: 'Inter', sans-serif;
+  background-image: radial-gradient(circle at center, #0f0f23 0%, #000000 100%);
+  background-attachment: fixed;
+  background-size: cover;
+}
+
+@layer components {
+  .tab-btn {
+    @apply bg-gray-800 text-white px-4 py-2 rounded-xl shadow hover:bg-purple-700 transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-95;
+  }
+
+  .input {
+    @apply w-full p-2 rounded-xl bg-gray-900 text-white placeholder-gray-500 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-400 transition duration-200;
+  }
+
+  .neon-text {
+    @apply text-green-400 drop-shadow-[0_0_6px_rgba(0,255,0,0.6)];
+  }
+
+  .btn {
+    @apply px-4 py-2 rounded-xl font-semibold shadow-md transition-all duration-200 ease-in-out hover:scale-105 active:scale-95;
+  }
+
+  .btn-primary {
+    @apply bg-purple-600 hover:bg-purple-700 text-white;
+  }
+
+  .btn-danger {
+    @apply bg-red-600 hover:bg-red-700 text-white;
+  }
+
+  .btn-success {
+    @apply bg-green-600 hover:bg-green-700 text-white;
+  }
+
+  .card {
+    @apply bg-gray-900 rounded-xl p-4 shadow-lg;
+  }
+
+  .glow-card {
+    @apply border border-purple-600;
+    box-shadow: 0 0 20px rgba(128, 0, 255, 0.3);
+  }
+
+  .fade-in {
+    animation: fadeIn 0.5s ease-in-out both;
+  }
+}
+
+@layer utilities {
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
