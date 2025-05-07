@@ -194,7 +194,7 @@ function App() {
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-black to-gray-900 text-white p-6 font-mono">
       <div className="max-w-5xl mx-auto px-4">
         <Header onLogout={handleLogout} role={role} />
-        <BalanceCard balance={balance} avatarUrl={user?.avatar_url} role={role} />
+        <BalanceCard balance={balance} name={user?.name} role={role} />
         <NavTabs currentTab={tab} setTab={setTab} isAdmin={isAdmin} role={role} />
 
         {tab === 'dashboard' && <HeroSection role={role} />}
