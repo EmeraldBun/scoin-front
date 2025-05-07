@@ -32,7 +32,7 @@ function Casino({ balance, refreshUser, role }) {
     }, 100)
 
     try {
-      const res = await fetch('${API_URL}/casino/spin', {
+      const res = await fetch(`${API_URL}/casino/spin`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

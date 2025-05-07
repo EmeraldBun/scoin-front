@@ -45,7 +45,7 @@ function App() {
   }
 
   const fetchUsers = async () => {
-    const res = await fetch('${API_URL}/users', {
+    const res = await fetch(`${API_URL}/users`, {
       headers: { Authorization: `Bearer ${token}` },
     })
     const data = await res.json()
@@ -53,7 +53,7 @@ function App() {
   }
 
   const fetchItems = async () => {
-    const res = await fetch('${API_URL}/items', {
+    const res = await fetch(`${API_URL}/items`, {
       headers: { Authorization: `Bearer ${token}` },
     })
     const data = await res.json()
@@ -61,7 +61,7 @@ function App() {
   }
 
   const fetchPurchases = async () => {
-    const res = await fetch('${API_URL}/my-purchases', {
+    const res = await fetch(`${API_URL}/my-purchases`, {
       headers: { Authorization: `Bearer ${token}` },
     })
     const data = await res.json()
@@ -105,7 +105,7 @@ function App() {
   }
 
   const buyItem = async (itemId) => {
-    const res = await fetch('${API_URL}/buy', {
+    const res = await fetch(`${API_URL}/buy`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -124,7 +124,7 @@ function App() {
   }
 
   const addItem = async (item) => {
-    const res = await fetch('${API_URL}/items', {
+    const res = await fetch(`${API_URL}/items`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

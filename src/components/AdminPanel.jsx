@@ -13,7 +13,7 @@ function AdminPanel({ users, currentUserId, giveCoins, deleteUser, items, delete
 
   const handleUserCreate = async (e) => {
     e.preventDefault()
-    const res = await fetch('${API_URL}/register', {
+    const res = await fetch(`${API_URL}/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

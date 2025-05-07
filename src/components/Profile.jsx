@@ -15,7 +15,7 @@ function Profile({ user, onUpdate }) {
     formData.append('avatar', avatarFile)
 
     try {
-      const res = await fetch('${API_URL}/avatar', {
+      const res = await fetch(`${API_URL}/avatar`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         body: formData,
@@ -37,7 +37,7 @@ function Profile({ user, onUpdate }) {
   const handleChangePassword = async () => {
     if (!passwords.current || !passwords.new) return
     try {
-      const res = await fetch('${API_URL}/change-password', {
+      const res = await fetch(`${API_URL}/change-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
