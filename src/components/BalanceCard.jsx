@@ -1,26 +1,21 @@
 import React from 'react';
-import { useUser } from '../context/UserContext';
 
-const BalanceCard = () => {
-  const { user } = useUser();
+const currencyMap = {
+  'Гос': 'Andriana-Coin',
+  'Холодник': 'Sknk-Coin',
+  'Закрывающий': 'Rezak-Coin',
+};
 
-  if (!user) return null;
-
-  const currencyMap = {
-    'Гос': 'Andriana-Coin',
-    'Холодник': 'Sknk-Coin',
-    'Закрывающий': 'Rezak-Coin',
-  };
-
-  const currency = currencyMap[user.role] || 'S-Coin';
+const BalanceCard = ({ name, balance, role }) => {
+  const currency = currencyMap[role] || 'S-Coin';
 
   return (
-    <div className="flex justify-center mt-4 px-4">
-      <div className="w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl bg-neutral-900 border border-purple-500 rounded-2xl p-4 text-center shadow-md">
-        <div className="text-white text-lg font-medium break-words">{user.name}</div>
-        <div className="text-sm text-gray-400 mb-2">{user.role}</div>
-        <div className="text-green-400 text-2xl font-mono font-bold">
-          {user.balance} {currency}
+    <div className="flex justify-center px-4 sm:px-6">
+      <div className="w-full max-w-md bg-zinc-900 border border-purple-500 rounded-2xl p-4 sm:p-6 text-center shadow-lg">
+        <div className="text-white text-lg sm:text-xl font-semibold break-words">{name}</div>
+        <div className="text-sm text-zinc-400 mb-2">{role}</div>
+        <div className="text-green-400 text-2xl sm:text-3xl font-mono font-bold">
+          {balance} {currency}
         </div>
       </div>
     </div>

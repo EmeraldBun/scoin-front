@@ -1,63 +1,64 @@
-import { useState } from 'react'
+import { useState } from 'react';
 
-function AdminPanel({ users, currentUserId, giveCoins, deleteUser, items, deleteItem, addItem }) {
-  const API_URL = import.meta.env.VITE_API_URL;
-  const [newUser, setNewUser] = useState({
-    login: '',
-    name: '',
-    password: '',
-    is_admin: false,
-    role: 'Холодник'
-  })
+const AdminPanel = ({ users, currentUserId, giveCoins, deleteUser, items, deleteItem, addItem }) => {
+  const [newUser, setNewUser] = useState({ login: '', password: '', name: '', is_admin: false });
+  const [newItem, setNewItem] = useState({ name: '', price: '', description: '', image_url: '' });
+  const [coinAmounts, setCoinAmounts] = useState({});
 
-  const handleUserCreate = async (e) => {
-    e.preventDefault()
-    const res = await fetch(`${API_URL}/register`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
-      body: JSON.stringify(newUser),
-    })
-    if (res.ok) {
-      setNewUser({ login: '', name: '', password: '', is_admin: false, role: 'Холодник' })
-      alert('Пользователь добавлен')
-    } else {
-      alert('Ошибка при добавлении')
-    }
-  }
+  const handleUserChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setNewUser((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+  };
+
+  const handleItemChange = (e) => {
+    const { name, value } = e.target;
+    setNewItem((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleCoinChange = (userId, value) => {
+    setCoinAmounts((prev) => ({ ...prev, [userId]: value }));
+  };
 
   return (
-    <div className="fade-in space-y-8 max-w-5xl mx-auto">
-      <h2 className="text-2xl font-bold text-purple-400 text-center">🛠 Админка</h2>
-
+    <div className="space-y-10">
+      {/* Users Table */}
       <div className="overflow-x-auto">
-        <h3 className="text-xl font-bold mb-2 text-purple-300">Пользователи</h3>
-        <table className="w-full text-left min-w-[600px]">
+        <h2 className="text-xl font-semibold mb-2">Пользователи</h2>
+        <table className="w-full min-w-[600px] text-left text-sm">
           <thead>
-            <tr className="text-purple-500">
-              <th>ID</th>
-              <th>Имя</th>
-              <th>Баланс</th>
-              <th>Роль</th>
-              <th></th>
+            <tr className="text-zinc-400">
+              <th className="p-2">Имя</th>
+              <th className="p-2">Баланс</th>
+              <th className="p-2">Дать коины</th>
+              <th className="p-2">Удалить</th>
             </tr>
           </thead>
           <tbody>
-            {users.map((u) => (
-              <tr key={u.id} className="border-b border-zinc-700">
-                <td>{u.id}</td>
-                <td>{u.name}</td>
-                <td>{u.balance}</td>
-                <td>{u.role}</td>
-                <td className="flex gap-2">
-                  <button onClick={() => giveCoins(u.id)} className="btn btn-secondary btn-sm">
-                    +100
+            {users.map((user) => (
+              <tr key={user.id} className="border-t border-zinc-800">
+                <td className="p-2">{user.name}</td>
+                <td className="p-2">{user.balance}</td>
+                <td className="p-2">
+                  <input
+                    type="number"
+                    value={coinAmounts[user.id] || ''}
+                    onChange={(e) => handleCoinChange(user.id, e.target.value)}
+                    className="bg-zinc-700 px-2 py-1 rounded w-20 text-white text-sm"
+                  />
+                  <button
+                    onClick={() => giveCoins(user.id, Number(coinAmounts[user.id]))}
+                    className="ml-2 bg-purple-700 hover:bg-purple-800 text-white px-3 py-1 rounded text-sm"
+                  >
+                    Дать
                   </button>
-                  {u.id !== currentUserId && (
-                    <button onClick={() => deleteUser(u.id)} className="btn btn-danger btn-sm">
-                      Удалить
+                </td>
+                <td className="p-2">
+                  {user.id !== currentUserId && (
+                    <button
+                      onClick={() => deleteUser(user.id)}
+                      className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm"
+                    >
+                      ✕
                     </button>
                   )}
                 </td>
@@ -67,76 +68,76 @@ function AdminPanel({ users, currentUserId, giveCoins, deleteUser, items, delete
         </table>
       </div>
 
-      <div className="bg-zinc-800 p-4 rounded-xl border border-zinc-600 max-w-2xl mx-auto">
-        <h3 className="text-xl font-bold mb-2 text-purple-300">➕ Добавить пользователя</h3>
-        <form onSubmit={handleUserCreate} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <input
-            placeholder="Логин"
-            value={newUser.login}
-            onChange={(e) => setNewUser({ ...newUser, login: e.target.value })}
-            className="input"
-          />
-          <input
-            placeholder="Имя"
-            value={newUser.name}
-            onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
-            className="input"
-          />
-          <input
-            type="password"
-            placeholder="Пароль"
-            value={newUser.password}
-            onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-            className="input"
-          />
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={newUser.is_admin}
-              onChange={(e) => setNewUser({ ...newUser, is_admin: e.target.checked })}
-            />
-            Админ
+      {/* User Form */}
+      <div>
+        <h2 className="text-xl font-semibold mb-2">Добавить пользователя</h2>
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            await fetch(`/api/register`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+              body: JSON.stringify(newUser),
+            });
+            location.reload();
+          }}
+          className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl"
+        >
+          <input name="login" placeholder="Логин" onChange={handleUserChange} className="bg-zinc-800 px-3 py-2 rounded text-white" />
+          <input name="password" placeholder="Пароль" type="password" onChange={handleUserChange} className="bg-zinc-800 px-3 py-2 rounded text-white" />
+          <input name="name" placeholder="Имя" onChange={handleUserChange} className="bg-zinc-800 px-3 py-2 rounded text-white" />
+          <label className="flex items-center text-white">
+            <input type="checkbox" name="is_admin" onChange={handleUserChange} className="mr-2" /> Админ
           </label>
-
-          <select
-            value={newUser.role}
-            onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
-            className="input col-span-full"
-          >
-            <option value="Холодник">Холодник</option>
-            <option value="Гос">Гос</option>
-            <option value="Закрывающий">Закрывающий</option>
-          </select>
-
-          <button type="submit" className="btn btn-primary col-span-full">Добавить</button>
+          <button className="col-span-full bg-purple-700 hover:bg-purple-800 text-white px-4 py-2 rounded mt-2">
+            Добавить
+          </button>
         </form>
       </div>
 
-      <div className="max-w-2xl mx-auto">
-        <h3 className="text-xl font-bold mb-2 text-purple-300">Добавить товар</h3>
-        <AddItemForm onAdd={addItem} />
+      {/* Item Form */}
+      <div>
+        <h2 className="text-xl font-semibold mb-2">Добавить товар</h2>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            addItem({ ...newItem, price: Number(newItem.price) });
+            setNewItem({ name: '', price: '', description: '', image_url: '' });
+          }}
+          className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl"
+        >
+          <input name="name" placeholder="Название" value={newItem.name} onChange={handleItemChange} className="bg-zinc-800 px-3 py-2 rounded text-white" />
+          <input name="price" placeholder="Цена" type="number" value={newItem.price} onChange={handleItemChange} className="bg-zinc-800 px-3 py-2 rounded text-white" />
+          <input name="image_url" placeholder="Картинка (URL)" value={newItem.image_url} onChange={handleItemChange} className="bg-zinc-800 px-3 py-2 rounded text-white" />
+          <input name="description" placeholder="Описание" value={newItem.description} onChange={handleItemChange} className="bg-zinc-800 px-3 py-2 rounded text-white" />
+          <button className="col-span-full bg-purple-700 hover:bg-purple-800 text-white px-4 py-2 rounded mt-2">
+            Добавить
+          </button>
+        </form>
       </div>
 
+      {/* Items Table */}
       <div className="overflow-x-auto">
-        <h3 className="text-xl font-bold mb-2 text-purple-300">Товары</h3>
-        <table className="w-full text-left min-w-[500px]">
+        <h2 className="text-xl font-semibold mb-2">Товары</h2>
+        <table className="w-full min-w-[600px] text-left text-sm">
           <thead>
-            <tr className="text-purple-500">
-              <th>ID</th>
-              <th>Название</th>
-              <th>Цена</th>
-              <th></th>
+            <tr className="text-zinc-400">
+              <th className="p-2">Название</th>
+              <th className="p-2">Цена</th>
+              <th className="p-2">Удалить</th>
             </tr>
           </thead>
           <tbody>
             {items.map((item) => (
-              <tr key={item.id} className="border-b border-zinc-700">
-                <td>{item.id}</td>
-                <td>{item.name}</td>
-                <td>{item.price}</td>
-                <td>
-                  <button onClick={() => deleteItem(item.id)} className="btn btn-danger btn-sm">
-                    Удалить
+              <tr key={item.id} className="border-t border-zinc-800">
+                <td className="p-2">{item.name}</td>
+                <td className="p-2">{item.price}</td>
+                <td className="p-2">
+                  <button
+                    onClick={() => deleteItem(item.id)}
+                    className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm"
+                  >
+                    ✕
                   </button>
                 </td>
               </tr>
@@ -145,32 +146,7 @@ function AdminPanel({ users, currentUserId, giveCoins, deleteUser, items, delete
         </table>
       </div>
     </div>
-  )
-}
+  );
+};
 
-function AddItemForm({ onAdd }) {
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    const f = e.target
-    const item = {
-      name: f.name.value,
-      price: parseInt(f.price.value),
-      description: f.description.value,
-      image_url: f.image_url.value,
-    }
-    onAdd(item)
-    f.reset()
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-2">
-      <input name="name" placeholder="Название" className="input w-full" />
-      <input name="price" type="number" placeholder="Цена" className="input w-full" />
-      <input name="image_url" placeholder="Ссылка на изображение" className="input w-full" />
-      <textarea name="description" placeholder="Описание" className="input w-full" />
-      <button type="submit" className="btn btn-primary w-full">Добавить</button>
-    </form>
-  )
-}
-
-export default AdminPanel
+export default AdminPanel;
