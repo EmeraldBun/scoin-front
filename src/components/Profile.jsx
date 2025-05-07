@@ -71,7 +71,7 @@ function Profile({ user, onUpdate }) {
 
       <div className="bg-zinc-800 p-4 rounded-xl border border-zinc-600 text-center">
         <img
-          src={user.avatar_url || '/default-avatar.png'}
+          src={user.avatar_url ? `${import.meta.env.VITE_API_URL.replace('/api', '')}/${user.avatar_url}` : '/default-avatar.png'}
           alt="avatar"
           className="w-24 h-24 rounded-full object-cover mx-auto border-2 border-purple-400"
         />
