@@ -7,7 +7,6 @@ import Shop from './components/Shop'
 import Purchases from './components/Purchases'
 import AdminPanel from './components/AdminPanel'
 import Profile from './components/Profile'
-import Casino from './components/Casino'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 
@@ -20,6 +19,8 @@ function App() {
   const [purchases, setPurchases] = useState([])
   const [tab, setTab] = useState('dashboard')
   const isAdmin = localStorage.getItem('is_admin') === 'true'
+
+  console.log("API_URL =", import.meta.env.VITE_API_URL);
 
   const API_URL = import.meta.env.VITE_API_URL;
   const handleLogin = async () => {

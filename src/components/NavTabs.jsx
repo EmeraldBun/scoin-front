@@ -3,7 +3,6 @@ function NavTabs({ currentTab, setTab, isAdmin, role }) {
     { id: 'dashboard', label: 'Пользователь', icon: '👤' },
     { id: 'shop', label: 'Магазин', icon: '🛒' },
     { id: 'purchases', label: 'Мои покупки', icon: '🛍️' },
-    { id: 'casino', label: 'Казино', icon: '🎰' },
     { id: 'profile', label: 'Профиль', icon: '⚙️' },
     { id: 'admin', label: 'Админка', icon: '🛠' },
   ]
