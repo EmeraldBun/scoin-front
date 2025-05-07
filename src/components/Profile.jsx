@@ -1,118 +1,82 @@
-import { useState } from 'react'
+import React, { useEffect, useState } from 'react'
+import { API_URL } from '../config'
 import { toast } from 'react-toastify'
 
-function Profile({ user, onUpdate }) {
+const Profile = () => {
+  const [user, setUser] = useState(null)
   const [avatarFile, setAvatarFile] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [passwords, setPasswords] = useState({ current: '', new: '' })
-  const API_URL = import.meta.env.VITE_API_URL;
 
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await fetch(`${API_URL}/me`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        })
+        const data = await res.json()
+        if (res.ok) setUser(data)
+      } catch (err) {
+        console.error('Ошибка загрузки профиля', err)
+      }
+    }
+    fetchProfile()
+  }, [])
 
-  const handleUpload = async () => {
-    if (!avatarFile) return
-    setLoading(true)
+  const handleAvatarChange = (e) => {
+    setAvatarFile(e.target.files[0])
+  }
+
+  const handleAvatarUpload = async () => {
+    if (!avatarFile) return toast.error('Выберите файл')
+
     const formData = new FormData()
     formData.append('avatar', avatarFile)
 
     try {
       const res = await fetch(`${API_URL}/avatar`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
         body: formData,
       })
+
       const data = await res.json()
       if (res.ok) {
         toast.success('Аватар обновлён')
-        onUpdate({ avatar_url: data.url })
+        setUser((prev) => ({ ...prev, avatar_url: data.avatar_url }))
       } else {
-        toast.error(data.error || 'Ошибка загрузки')
+        toast.error(data.error || 'Ошибка загрузки аватара')
       }
-    } catch (e) {
-      toast.error('Ошибка загрузки')
-    } finally {
-      setLoading(false)
+    } catch (err) {
+      console.error('Ошибка запроса:', err)
+      toast.error('Ошибка загрузки аватара')
     }
   }
 
-  const handleChangePassword = async () => {
-    if (!passwords.current || !passwords.new) return
-    try {
-      const res = await fetch(`${API_URL}/change-password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify(passwords),
-      })
-      const data = await res.json()
-      if (res.ok) {
-        toast.success('Пароль изменён')
-        setPasswords({ current: '', new: '' })
-      } else {
-        toast.error(data.error || 'Ошибка смены пароля')
-      }
-    } catch {
-      toast.error('Ошибка смены пароля')
-    }
-  }
-
-  const getCurrencyName = (role) => {
-    switch (role) {
-      case 'Гос': return 'Andriana-Coin'
-      case 'Закрывающий': return 'Rezak-Coin'
-      default: return 'Sknk-Coin'
-    }
-  }
+  if (!user) return <div className="text-center">Загрузка...</div>
 
   return (
-    <div className="fade-in max-w-md mx-auto space-y-6">
-      <h2 className="text-2xl font-bold text-purple-400 text-center">👤 Профиль</h2>
-
-      <div className="bg-zinc-800 p-4 rounded-xl border border-zinc-600 text-center">
+    <div className="max-w-md mx-auto bg-white p-6 rounded shadow mt-6">
+      <h2 className="text-xl font-bold mb-4">Профиль</h2>
+      <div className="mb-4">
         <img
-          src={user.avatar_url ? `https://scoin-backend.onrender.com/${user.avatar_url}` : '/default-avatar.png'}
+          src={user.avatar_url ? `${API_URL.replace('/api', '')}/uploads/${user.avatar_url}` : '/default-avatar.png'}
           alt="avatar"
-          className="w-24 h-24 rounded-full object-cover mx-auto border-2 border-purple-400"
+          className="w-24 h-24 rounded-full object-cover mb-2"
         />
-        <p className="mt-2 text-lg font-semibold">{user.name}</p>
-        <p className="text-sm text-purple-300 mt-1">Роль: {user.role || 'Не указано'}</p>
-        <p className="text-sm text-zinc-400">Валюта: {getCurrencyName(user.role)}</p>
-      </div>
-
-      <div className="bg-zinc-800 p-4 rounded-xl border border-zinc-600">
-        <h3 className="text-lg font-bold text-purple-300 mb-2">📸 Обновить аватар</h3>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => setAvatarFile(e.target.files[0])}
-          className="input"
-        />
-        <button onClick={handleUpload} className="btn btn-primary mt-2" disabled={loading}>
-          {loading ? 'Загрузка...' : 'Загрузить'}
+        <input type="file" onChange={handleAvatarChange} />
+        <button
+          onClick={handleAvatarUpload}
+          className="mt-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-1 rounded"
+        >
+          Обновить аватар
         </button>
       </div>
-
-      <div className="bg-zinc-800 p-4 rounded-xl border border-zinc-600">
-        <h3 className="text-lg font-bold text-purple-300 mb-2">🔑 Сменить пароль</h3>
-        <input
-          type="password"
-          placeholder="Текущий пароль"
-          value={passwords.current}
-          onChange={(e) => setPasswords({ ...passwords, current: e.target.value })}
-          className="input mb-2"
-        />
-        <input
-          type="password"
-          placeholder="Новый пароль"
-          value={passwords.new}
-          onChange={(e) => setPasswords({ ...passwords, new: e.target.value })}
-          className="input mb-2"
-        />
-        <button onClick={handleChangePassword} className="btn btn-secondary">
-          Сменить пароль
-        </button>
-      </div>
+      <p><strong>Имя:</strong> {user.name}</p>
+      <p><strong>Баланс:</strong> {user.balance}</p>
+      <p><strong>Роль:</strong> {user.role}</p>
     </div>
   )
 }
