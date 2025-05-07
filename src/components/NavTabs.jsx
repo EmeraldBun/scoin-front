@@ -8,7 +8,7 @@ function NavTabs({ currentTab, setTab, isAdmin, role }) {
   ]
 
   return (
-    <div className="flex gap-2 mb-6 flex-wrap fade-in">
+    <div className="flex justify-center">
       {tabs.map(
         (tab) =>
           (tab.id !== 'admin' || isAdmin) && (
