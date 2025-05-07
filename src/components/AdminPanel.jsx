@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import CasinoSymbolsEditor from './CasinoSymbolsEditor'
 
 function AdminPanel({ users, currentUserId, giveCoins, deleteUser, items, deleteItem, addItem }) {
   const API_URL = import.meta.env.VITE_API_URL;
@@ -145,8 +144,6 @@ function AdminPanel({ users, currentUserId, giveCoins, deleteUser, items, delete
           </tbody>
         </table>
       </div>
-
-      <CasinoSymbolsEditor />
     </div>
   )
 }
