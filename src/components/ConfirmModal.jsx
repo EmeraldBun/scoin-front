@@ -3,9 +3,9 @@ function ConfirmModal({ item, onConfirm, onClose, role }) {
 
   const getCurrencyName = (role) => {
     switch (role) {
-      case 'Гос': return 'Andriana-Coin'
-      case 'Закрывающий': return 'Rezak-Coin'
-      default: return 'Sknk-Coin'
+      case 'Гос': return 'Scam-Coin'
+      case 'Закрывающий': return 'Scam-Coin'
+      default: return 'Scam-Coin'
     }
   }
 

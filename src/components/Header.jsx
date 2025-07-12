@@ -1,9 +1,9 @@
 function Header({ onLogout, role }) {
   const getCurrencyName = (role) => {
     switch (role) {
-      case 'Гос': return 'Andriana-Coin'
-      case 'Закрывающий': return 'Rezak-Coin'
-      default: return 'Sknk-Coin'
+      case 'Гос': return 'ScamBank'
+      case 'Закрывающий': return 'ScamBank'
+      default: return 'ScamBank'
     }
   }
 

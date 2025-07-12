@@ -1,24 +1,79 @@
-function HeroSection({ role }) {
-  const getCurrencyName = (role) => {
-    switch (role) {
-      case 'Гос': return 'Andriana-Coin'
-      case 'Закрывающий': return 'Rezak-Coin'
-      default: return 'Sknk-Coin'
-    }
+import { useState } from 'react';
+
+/**
+ * Компонент используется ДВАЖДЫ:
+ *   • как форма логина — когда передан prop onLogin;
+ *   • как сплеш-экран «Главная» — когда пользователь уже в системе.
+ *
+ * Поэтому: если onLogin нет → показываем простое приветствие,
+ *           иначе — рендерим форму авторизации.
+ */
+function HeroSection({ onLogin, name }) {
+  /* ---------- 1. Уже вошёл — показываем приветствие  ---------- */
+  if (!onLogin) {
+    return (
+      <div className="flex flex-col items-center gap-4 py-10">
+        <img src="/coin.gif" alt="coin" className="w-32 animate-pulse" />
+        <h2 className="text-3xl font-bold">
+          Добро пожаловать{name ? `, ${name}!` : '!'}
+        </h2>
+        <p className="text-zinc-400">Выберите вкладку сверху, чтобы начать работу.</p>
+      </div>
+    );
   }
 
+  /* ---------- 2. Форма входа (старый код)  ---------- */
+  const [loginData, setLoginData] = useState({ login: '', password: '' });
+  const [error,     setError]     = useState(null);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
+
+    try {
+      const res  = await fetch('/api/login', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(loginData),
+      });
+      const data = await res.json();
+
+      if (res.ok) {                           // успех
+        localStorage.setItem('token', data.token);
+        onLogin(data.user);                   // <<== сообщает App, что всё ок
+      } else {
+        setError(data.error || 'Неверные учётные данные');
+      }
+    } catch {
+      setError('Сервер недоступен');
+    }
+  };
+
   return (
-    <div className="text-center px-4 py-8 min-h-[200px] sm:min-h-[250px] md:min-h-[300px] max-w-3xl mx-auto">
-      <img
-        src="/coin.gif"
-        alt="Coin"
-        className="mx-auto w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 mb-4 animate-bounce drop-shadow-xl"
-      />
-      <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-2">
-        Добро пожаловать в <span className="text-purple-400">{getCurrencyName(role)}</span>
-      </h1>
+    <div className="flex flex-col items-center gap-6 py-10">
+      <img src="/coin.gif" alt="coin" className="w-32" />
+
+      <form onSubmit={handleSubmit} className="w-full max-w-xs flex flex-col gap-3">
+        <input
+          placeholder="Логин"
+          value={loginData.login}
+          onChange={(e) => setLoginData({ ...loginData, login: e.target.value })}
+          className="w-full px-3 py-2 rounded bg-zinc-800 border border-zinc-600 text-white"
+        />
+        <input
+          type="password"
+          placeholder="Пароль"
+          value={loginData.password}
+          onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+          className="w-full px-3 py-2 rounded bg-zinc-800 border border-zinc-600 text-white"
+        />
+        {error && <div className="text-red-500 text-sm">{error}</div>}
+        <button className="w-full bg-purple-700 hover:bg-purple-800 text-white py-2 rounded">
+          Войти
+        </button>
+      </form>
     </div>
-  )
+  );
 }
 
-export default HeroSection
+export default HeroSection;

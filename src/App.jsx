@@ -30,17 +30,34 @@ function App() {
     fetchUser();
     fetchItems();
     fetchPurchases();
-    if (isAdmin) fetchUsers();
   }, [token]);
 
-  const fetchUser = async () => {
+  useEffect(() => {
+  if (user?.is_admin) {
+    fetchUsers();             // подгружаем список сразу после F5
+  }
+}, [user?.is_admin]);         // выполнится, когда is_admin изменится
+
+const fetchUser = async () => {
+  try {
     const res = await fetch(`${API_URL}/me`, {
       headers: { Authorization: `Bearer ${token}` },
     });
+
+    if (!res.ok) {
+      // если токен кривой – просто пишем в консоль, но user не затираем
+      console.warn('fetch /me:', res.status, await res.text());
+      return;
+    }
+
     const data = await res.json();
-    setUser(data);
+    setUser(data);            // в data точно есть is_admin
     setBalance(data.balance);
-  };
+  } catch (err) {
+    console.error('fetchUser error:', err);
+  }
+};
+
 
   const fetchItems = async () => {
     const res = await fetch(`${API_URL}/items`, {
@@ -79,8 +96,8 @@ function App() {
     if (res.ok) {
       toast.success('Покупка успешна!');
       fetchUser();
-      fetchPurchases();
-    } else {
+      fetchPurchases();     // ← добавь, если ещё не стояло
+    if (tab !== 'purchases') setTab('purchases'); // автопереключение (опц.)    } else {
       toast.error(data.error || 'Ошибка при покупке');
     }
   };
@@ -158,9 +175,9 @@ function App() {
     location.reload();
   };
 
-  if (!token) {
+  if (!token || !user) {
     return <HeroSection onLogin={setUser} />;
-  }
+  }  
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-black to-gray-900 text-white p-4 font-mono">
