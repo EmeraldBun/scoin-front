@@ -10,7 +10,7 @@ import AdminPanel from './components/AdminPanel';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -20,11 +20,19 @@ function App() {
   const [purchases, setPurchases] = useState([]);
   const [users, setUsers] = useState([]);
 
+  /* === токен из localStorage  */
   const token = localStorage.getItem('token');
-
   const isAdmin = user?.is_admin;
-  const role = user?.role;
 
+  /* === login callback из HeroSection */
+  const handleLogin = ({ token: tkn, user: usr }) => {
+    console.log('[App] handleLogin', { tkn, usr });
+    localStorage.setItem('token', tkn);
+    setUser(usr);
+    setBalance(usr.balance);
+  };
+
+  /* === начальные выборки после логина */
   useEffect(() => {
     if (!token) return;
     fetchUser();
@@ -32,55 +40,41 @@ function App() {
     fetchPurchases();
   }, [token]);
 
+  /* === если оказался админом — подгружаем список пользователей */
   useEffect(() => {
-  if (user?.is_admin) {
-    fetchUsers();             // подгружаем список сразу после F5
-  }
-}, [user?.is_admin]);         // выполнится, когда is_admin изменится
+    if (user?.is_admin) fetchUsers();
+  }, [user?.is_admin]);
 
-const fetchUser = async () => {
-  try {
+  /* -------------------- API helpers -------------------- */
+  const fetchUser = async () => {
     const res = await fetch(`${API_URL}/me`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-
-    if (!res.ok) {
-      // если токен кривой – просто пишем в консоль, но user не затираем
-      console.warn('fetch /me:', res.status, await res.text());
-      return;
-    }
-
+    if (!res.ok) return;
     const data = await res.json();
-    setUser(data);            // в data точно есть is_admin
+    setUser(data);
     setBalance(data.balance);
-  } catch (err) {
-    console.error('fetchUser error:', err);
-  }
-};
-
+  };
 
   const fetchItems = async () => {
     const res = await fetch(`${API_URL}/items`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    const data = await res.json();
-    setItems(data);
+    setItems(await res.json());
   };
 
   const fetchPurchases = async () => {
     const res = await fetch(`${API_URL}/my-purchases`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    const data = await res.json();
-    setPurchases(data);
+    setPurchases(await res.json());
   };
 
   const fetchUsers = async () => {
     const res = await fetch(`${API_URL}/users`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    const data = await res.json();
-    setUsers(data);
+    setUsers(await res.json());
   };
 
   const buyItem = async (itemId) => {
@@ -96,8 +90,9 @@ const fetchUser = async () => {
     if (res.ok) {
       toast.success('Покупка успешна!');
       fetchUser();
-      fetchPurchases();     // ← добавь, если ещё не стояло
-    if (tab !== 'purchases') setTab('purchases'); // автопереключение (опц.)    } else {
+      fetchPurchases();
+      if (tab !== 'purchases') setTab('purchases');
+    } else {
       toast.error(data.error || 'Ошибка при покупке');
     }
   };
@@ -111,27 +106,17 @@ const fetchUser = async () => {
       },
       body: JSON.stringify({ amount }),
     });
-    if (res.ok) {
-      toast.success('Начисление успешно');
-      fetchUsers();
-    } else {
-      toast.error('Ошибка начисления');
-    }
+    res.ok ? (toast.success('Начисление успешно'), fetchUsers())
+           : toast.error('Ошибка начисления');
   };
 
   const deleteUser = async (userId) => {
     const res = await fetch(`${API_URL}/users/${userId}`, {
       method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Authorization: `Bearer ${token}` },
     });
-    if (res.ok) {
-      toast.success('Пользователь удалён');
-      fetchUsers();
-    } else {
-      toast.error('Ошибка удаления');
-    }
+    res.ok ? (toast.success('Пользователь удалён'), fetchUsers())
+           : toast.error('Ошибка удаления');
   };
 
   const addItem = async (item) => {
@@ -143,27 +128,17 @@ const fetchUser = async () => {
       },
       body: JSON.stringify(item),
     });
-    if (res.ok) {
-      toast.success('Товар добавлен');
-      fetchItems();
-    } else {
-      toast.error('Ошибка при добавлении');
-    }
+    res.ok ? (toast.success('Товар добавлен'), fetchItems())
+           : toast.error('Ошибка при добавлении');
   };
 
   const deleteItem = async (itemId) => {
     const res = await fetch(`${API_URL}/items/${itemId}`, {
       method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Authorization: `Bearer ${token}` },
     });
-    if (res.ok) {
-      toast.success('Товар удалён');
-      fetchItems();
-    } else {
-      toast.error('Ошибка при удалении');
-    }
+    res.ok ? (toast.success('Товар удалён'), fetchItems())
+           : toast.error('Ошибка при удалении');
   };
 
   const updateUserProfile = (updatedUser) => {
@@ -175,21 +150,22 @@ const fetchUser = async () => {
     location.reload();
   };
 
+  /* ------------ рендер ------------ */
   if (!token || !user) {
-    return <HeroSection onLogin={setUser} />;
-  }  
+    return <HeroSection onLogin={handleLogin} />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-black to-gray-900 text-white p-4 font-mono">
       <div className="max-w-5xl mx-auto flex flex-col gap-4">
-        <Header onLogout={handleLogout} role={role} />
-        <BalanceCard balance={balance} name={user?.name} role={role} />
-        <NavTabs currentTab={tab} setTab={setTab} isAdmin={isAdmin} role={role} />
+        <Header onLogout={handleLogout} />
+        <BalanceCard balance={balance} name={user?.name} />
+        <NavTabs currentTab={tab} setTab={setTab} isAdmin={isAdmin} />
 
-        {tab === 'dashboard' && <HeroSection role={role} />}
-        {tab === 'shop' && <Shop items={items} onBuy={buyItem} role={role} />}
-        {tab === 'purchases' && <Purchases purchases={purchases} role={role} />}
-        {tab === 'profile' && user && (
+        {tab === 'dashboard' && <HeroSection />}
+        {tab === 'shop' && <Shop items={items} onBuy={buyItem} />}
+        {tab === 'purchases' && <Purchases purchases={purchases} />}
+        {tab === 'profile' && (
           <Profile user={user} onUpdate={updateUserProfile} />
         )}
         {tab === 'admin' && isAdmin && (

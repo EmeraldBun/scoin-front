@@ -51,6 +51,8 @@ function HeroSection({ onLogin, name }) {
 
       if (res.ok) {
         /* Передаём наверх и даём App сохранить токен + user */
+        // после успешного res.ok
+        console.log('[HeroSection] data →', data);
         onLogin(data);
       } else {
         setError(data.error || 'Неверные учётные данные');
