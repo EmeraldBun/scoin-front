@@ -1,32 +1,33 @@
 import { useEffect, useState } from 'react';
-import Header from './components/Header';
-import NavTabs from './components/NavTabs';
-import BalanceCard from './components/BalanceCard';
-import HeroSection from './components/HeroSection';
-import Shop from './components/Shop';
-import Purchases from './components/Purchases';
-import Profile from './components/Profile';
-import AdminPanel from './components/AdminPanel';
+import Header        from './components/Header';
+import NavTabs       from './components/NavTabs';
+import BalanceCard   from './components/BalanceCard';
+import HeroSection   from './components/HeroSection';
+import Shop          from './components/Shop';
+import Purchases     from './components/Purchases';
+import Profile       from './components/Profile';
+import AdminPanel    from './components/AdminPanel';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 function App() {
-  /* ──────────────────── глобальный token ──────────────────── */
+  /* ─────────── глобальный токен ─────────── */
   const [token, setToken] = useState(() => localStorage.getItem('token') || '');
 
-  /* ──────────────────── остальные стейты ──────────────────── */
-  const [user,       setUser]       = useState(null);
-  const [balance,    setBalance]    = useState(0);
-  const [tab,        setTab]        = useState('dashboard');
-  const [items,      setItems]      = useState([]);
-  const [purchases,  setPurchases]  = useState([]);
-  const [users,      setUsers]      = useState([]);
+  /* ─────────── остальное состояние ─────────── */
+  const [user,      setUser]      = useState(null);
+  const [balance,   setBalance]   = useState(0);
+  const [tab,       setTab]       = useState('dashboard');
+  const [items,     setItems]     = useState([]);
+  const [purchases, setPurchases] = useState([]);
+  const [users,     setUsers]     = useState([]);
 
   const isAdmin = user?.is_admin;
+  const authHeader = () => ({ Authorization: `Bearer ${token}` });
 
-  /* ══════════════════════ login callback ═════════════════════ */
+  /* ========== login callback из HeroSection ========== */
   const handleLogin = ({ token: tkn, user: usr }) => {
     localStorage.setItem('token', tkn);
     setToken(tkn);
@@ -34,15 +35,7 @@ function App() {
     setBalance(usr.balance);
   };
 
-  /* когда таб переключается на admin — тянем свежий список */
-  useEffect(() => {
-    if (tab === 'admin' && user?.is_admin) {
-      fetchUsers();
-  }
-  }, [tab, user?.is_admin]);
-
-
-  /* ═════════════ подгружаем данные, когда появился token ═════ */
+  /* подгружаем всё после появления токена */
   useEffect(() => {
     if (!token) return;
     fetchUser();
@@ -50,14 +43,17 @@ function App() {
     fetchPurchases();
   }, [token]);
 
-  /* ─── если пользователь оказался админом — тянем список ─── */
+  /* если юзер — админ, тянем список один раз */
   useEffect(() => {
     if (user?.is_admin) fetchUsers();
   }, [user?.is_admin]);
 
-  /* ═══════════════ helpers для запросов ═══════════════ */
-  const authHeader = () => ({ Authorization: `Bearer ${token}` });
+  /* когда открываем вкладку Admin — обновляем список */
+  useEffect(() => {
+    if (tab === 'admin' && user?.is_admin) fetchUsers();
+  }, [tab, user?.is_admin]);
 
+  /* ─────────── helpers ─────────── */
   const fetchUser = async () => {
     const res = await fetch(`${API_URL}/me`, { headers: authHeader() });
     if (res.ok) {
@@ -82,7 +78,7 @@ function App() {
     if (res.ok) setUsers(await res.json());
   };
 
-  /* ═══════════════ actions ═══════════════ */
+  /* ─────────── actions ─────────── */
   const buyItem = async (itemId) => {
     const res = await fetch(`${API_URL}/buy`, {
       method: 'POST',
@@ -117,6 +113,18 @@ function App() {
            : toast.error('Ошибка удаления');
   };
 
+  /* ------- НОВОЕ: добавление пользователя ------- */
+  const addUser = async (form) => {
+    const res = await fetch(`${API_URL}/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeader() },
+      body: JSON.stringify(form),
+    });
+    const data = await res.json();
+    res.ok ? (toast.success('Пользователь создан'), fetchUsers())
+           : toast.error(data.error || 'Ошибка регистрации');
+  };
+
   const addItem = async (item) => {
     const res = await fetch(`${API_URL}/items`, {
       method: 'POST',
@@ -143,7 +151,7 @@ function App() {
     location.reload();
   };
 
-  /* ═══════════════ render ═══════════════ */
+  /* ─────────── render ─────────── */
   if (!token || !user) {
     return <HeroSection onLogin={handleLogin} />;
   }
@@ -152,28 +160,26 @@ function App() {
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-black to-gray-900 text-white p-4 font-mono">
       <div className="max-w-5xl mx-auto flex flex-col gap-4">
         <Header onLogout={handleLogout} />
-
         <BalanceCard balance={balance} name={user.name} />
-
         <NavTabs currentTab={tab} setTab={setTab} isAdmin={isAdmin} />
 
         {tab === 'dashboard' && <HeroSection name={user.name} />}
-        {tab === 'shop'       && <Shop items={items} onBuy={buyItem} />}
+        {tab === 'shop'       && <Shop      items={items}      onBuy={buyItem} />}
         {tab === 'purchases'  && <Purchases purchases={purchases} />}
-        {tab === 'profile'    && <Profile user={user} onUpdate={updateUserProfile} />}
+        {tab === 'profile'    && <Profile   user={user}        onUpdate={updateUserProfile} />}
         {tab === 'admin' && isAdmin && (
           <AdminPanel
             users={users}
             currentUserId={user.id}
             giveCoins={giveCoins}
             deleteUser={deleteUser}
+            addUser={addUser}
             items={items}
             deleteItem={deleteItem}
             addItem={addItem}
           />
         )}
       </div>
-
       <ToastContainer position="bottom-right" autoClose={3000} theme="dark" />
     </div>
   );
