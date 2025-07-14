@@ -5,42 +5,53 @@ import { useState } from 'react';
  *   • как форма логина — когда передан prop onLogin;
  *   • как сплеш-экран «Главная» — когда пользователь уже в системе.
  *
- * Поэтому: если onLogin нет → показываем простое приветствие,
- *           иначе — рендерим форму авторизации.
+ * Если onLogin === undefined → показываем приветствие,
+ * иначе — форму авторизации.
  */
+
+/* Базовый URL API. На проде приходит из переменной окружения
+   VITE_API_URL (Render / Netlify). Локально падаем на '/api'. */
+const API_URL = import.meta.env.VITE_API_URL || '/api';
+
 function HeroSection({ onLogin, name }) {
-  /* ---------- 1. Уже вошёл — показываем приветствие  ---------- */
+  /* ------------------------------------------------------------------
+   * 1. Пользователь уже вошёл – просто приветствуем
+   * ------------------------------------------------------------------ */
   if (!onLogin) {
     return (
       <div className="flex flex-col items-center gap-4 py-10">
         <img src="/coin.gif" alt="coin" className="w-32 animate-pulse" />
         <h2 className="text-3xl font-bold">
-          Добро пожаловать{name ? `, ${name}!` : '!'}
+          Добро пожаловать{ name ? `, ${name}!` : '!' }
         </h2>
-        <p className="text-zinc-400">Выберите вкладку сверху, чтобы начать работу.</p>
+        <p className="text-zinc-400">
+          Выберите вкладку сверху, чтобы начать работу.
+        </p>
       </div>
     );
   }
 
-  /* ---------- 2. Форма входа (старый код)  ---------- */
+  /* ------------------------------------------------------------------
+   * 2. Форма входа
+   * ------------------------------------------------------------------ */
   const [loginData, setLoginData] = useState({ login: '', password: '' });
-  const [error,     setError]     = useState(null);
+  const [error, setError] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
 
     try {
-      const res  = await fetch('/api/login', {
-        method:  'POST',
+      const res = await fetch(`${API_URL}/login`, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify(loginData),
+        body: JSON.stringify(loginData),
       });
       const data = await res.json();
 
-      if (res.ok) {                           // успех
-        localStorage.setItem('token', data.token);
-        onLogin(data.user);                   // <<== сообщает App, что всё ок
+      if (res.ok) {
+        /* Передаём наверх и даём App сохранить токен + user */
+        onLogin(data);
       } else {
         setError(data.error || 'Неверные учётные данные');
       }
