@@ -34,6 +34,14 @@ function App() {
     setBalance(usr.balance);
   };
 
+  /* когда таб переключается на admin — тянем свежий список */
+  useEffect(() => {
+    if (tab === 'admin' && user?.is_admin) {
+      fetchUsers();
+  }
+  }, [tab, user?.is_admin]);
+
+
   /* ═════════════ подгружаем данные, когда появился token ═════ */
   useEffect(() => {
     if (!token) return;
