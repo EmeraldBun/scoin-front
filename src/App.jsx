@@ -100,8 +100,27 @@ function App() {
       headers: { 'Content-Type': 'application/json', ...authHeader() },
       body: JSON.stringify({ amount }),
     });
-    res.ok ? (toast.success('Начислено'), fetchUsers())
-           : toast.error('Ошибка начисления');
+
+    if (!res.ok) {
+      const { error } = await res.json().catch(() => ({}));
+      toast.error(error || 'Ошибка начисления');
+      return;
+    }
+
+    /* ➊ обновляем список пользователей на лету  */
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.id === id ? { ...u, balance: u.balance + amount } : u
+      )
+    );
+
+    /* ➋ если начислили себе – сразу подтягиваем баланс карточки */
+    if (id === user.id) {
+      setBalance((prev) => prev + amount);
+      setUser((prev) => ({ ...prev, balance: prev.balance + amount }));
+    }
+
+    toast.success(`+${amount} ScamCoin зачислено`);
   };
 
   const deleteUser = async (id) => {
