@@ -1,12 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
 
-/**
- * props:
- *   open        — boolean
- *   item        — { id, name, price, image_url, description }
- *   onConfirm   — () => void
- *   onClose     — () => void
- */
 function ConfirmModal({ open, item, onConfirm, onClose }) {
   if (!open || !item) return null;
 
@@ -29,23 +22,24 @@ function ConfirmModal({ open, item, onConfirm, onClose }) {
           className="bg-zinc-900 rounded-2xl p-6 w-full max-w-md shadow-lg cursor-auto"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* картинка */}
+          {/* картинка: помещается целиком, не вытягивается */}
           <img
             src={item.image_url || '/placeholder.png'}
             alt={item.name}
-            className="w-full h-56 object-cover rounded-xl mb-4"
+            className="w-full max-h-60 object-contain rounded-md mb-4"
           />
-          {/* название & цена */}
+
           <h3 className="text-2xl font-bold">{item.name}</h3>
-          <p className="text-purple-400 mb-2">{item.price} ScamCoin</p>
-          {/* описание */}
+          <p className="text-purple-400 mb-2">
+            {item.price} ScamCoin
+          </p>
+
           {item.description && (
             <p className="text-zinc-400 text-sm mb-4 whitespace-pre-wrap">
               {item.description}
             </p>
           )}
 
-          {/* кнопки */}
           <div className="flex justify-end gap-4">
             <button
               onClick={onClose}
