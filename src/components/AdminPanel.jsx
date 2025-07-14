@@ -1,6 +1,12 @@
 import { useState } from 'react';
 
+/* =========================================================================
+ *  AdminPanel
+ *    • Users  – список, выдача монет, удаление, добавление
+ *    • Items  – список товаров, добавление, удаление
+ * ========================================================================= */
 function AdminPanel({
+  /* из App.jsx */
   users,
   currentUserId,
   giveCoins,
@@ -10,8 +16,10 @@ function AdminPanel({
   deleteItem,
   addItem,
 }) {
-  /* ───────────── модалки ───────────── */
+  /* ────────── local state ────────── */
   const [showUserModal, setShowUserModal] = useState(false);
+  const [showItemModal, setShowItemModal] = useState(false);
+
   const [newUser, setNewUser] = useState({
     login: '',
     password: '',
@@ -19,19 +27,38 @@ function AdminPanel({
     is_admin: false,
   });
 
+  const [newItem, setNewItem] = useState({
+    name: '',
+    price: '',
+    description: '',
+    image_url: '',
+  });
+
+  /* индивидуальное поле «сколько монет начислить» для каждой строки */
+  const [amounts, setAmounts] = useState({}); // { userId: 100 }
+
+  /* ────────── handlers ────────── */
   const handleAddUser = async (e) => {
-    e.preventDefault();                 // ⬅️ не даём браузеру перезагрузиться
-    await addUser(newUser);             // проп из App.jsx
-    setShowUserModal(false);            // закрываем окно
+    e.preventDefault();
+    await addUser(newUser);
+    setShowUserModal(false);
     setNewUser({ login: '', password: '', name: '', is_admin: false });
   };
 
-  return (
-    <div className="space-y-8">
+  const handleAddItem = async (e) => {
+    e.preventDefault();
+    await addItem({ ...newItem, price: Number(newItem.price) });
+    setShowItemModal(false);
+    setNewItem({ name: '', price: '', description: '', image_url: '' });
+  };
 
-      {/* ───────────── USERS ───────────── */}
+  /* ========================================================================= */
+  return (
+    <div className="space-y-10">
+
+      {/* ───────────────── USERS ───────────────── */}
       <section>
-        <div className="flex justify-between items-center mb-3">
+        <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-bold">Пользователи</h3>
           <button
             onClick={() => setShowUserModal(true)}
@@ -44,9 +71,9 @@ function AdminPanel({
         <table className="w-full text-left">
           <thead className="bg-zinc-800">
             <tr>
-              <th className="py-2 px-3">Имя</th>
+              <th className="py-2 px-3">Имя / логин</th>
               <th className="py-2 px-3">Баланс</th>
-              <th className="py-2 px-3">Действия</th>
+              <th className="py-2 px-3">Начислить</th>
               <th />
             </tr>
           </thead>
@@ -62,13 +89,24 @@ function AdminPanel({
                 <tr key={u.id} className="border-b border-zinc-700">
                   <td className="py-2 px-3">{u.name || u.login}</td>
                   <td className="py-2 px-3">{u.balance}</td>
-                  <td className="py-2 px-3">
+                  <td className="py-2 px-3 flex items-center gap-2">
+                    <input
+                      type="number"
+                      min="1"
+                      className="w-24 px-2 py-1 rounded bg-zinc-800 border border-zinc-600"
+                      value={amounts[u.id] ?? 100}
+                      onChange={(e) =>
+                        setAmounts({ ...amounts, [u.id]: Number(e.target.value) })
+                      }
+                    />
                     <button
-                      onClick={() => giveCoins(u.id, 100)}
-                      className="bg-green-600 hover:bg-green-700 px-3 py-1 mr-2 rounded"
+                      onClick={() => giveCoins(u.id, amounts[u.id] ?? 100)}
+                      className="bg-green-600 hover:bg-green-700 px-3 py-1 rounded"
                     >
-                      +100
+                      ➕
                     </button>
+                  </td>
+                  <td className="py-2 px-3">
                     {u.id !== currentUserId && (
                       <button
                         onClick={() => deleteUser(u.id)}
@@ -85,12 +123,56 @@ function AdminPanel({
         </table>
       </section>
 
-      {/* ───────────── ITEMS (коротко) ───────────── */}
-      {/* … аналогично товары, если нужно … */}
+      {/* ───────────────── ITEMS ───────────────── */}
+      <section>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-bold">Товары</h3>
+          <button
+            onClick={() => setShowItemModal(true)}
+            className="bg-purple-600 hover:bg-purple-700 px-3 py-1 rounded"
+          >
+            + Добавить
+          </button>
+        </div>
 
-      {/* ───────────── MODAL: add user ───────────── */}
+        <table className="w-full text-left">
+          <thead className="bg-zinc-800">
+            <tr>
+              <th className="py-2 px-3">Название</th>
+              <th className="py-2 px-3">Цена</th>
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {items.length === 0 ? (
+              <tr>
+                <td colSpan="3" className="py-4 text-center text-zinc-400">
+                  Нет товаров
+                </td>
+              </tr>
+            ) : (
+              items.map((it) => (
+                <tr key={it.id} className="border-b border-zinc-700">
+                  <td className="py-2 px-3">{it.name}</td>
+                  <td className="py-2 px-3">{it.price}</td>
+                  <td className="py-2 px-3">
+                    <button
+                      onClick={() => deleteItem(it.id)}
+                      className="text-red-400 hover:text-red-500"
+                    >
+                      ✕
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </section>
+
+      {/* ═════════════ MODAL add user ═════════════ */}
       {showUserModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
           <form
             onSubmit={handleAddUser}
             className="bg-zinc-900 p-6 rounded-xl w-80 space-y-3"
@@ -122,7 +204,9 @@ function AdminPanel({
               <input
                 type="checkbox"
                 checked={newUser.is_admin}
-                onChange={(e) => setNewUser({ ...newUser, is_admin: e.target.checked })}
+                onChange={(e) =>
+                  setNewUser({ ...newUser, is_admin: e.target.checked })
+                }
               />
               Администратор
             </label>
@@ -131,6 +215,62 @@ function AdminPanel({
               <button
                 type="button"
                 onClick={() => setShowUserModal(false)}
+                className="px-4 py-1 bg-zinc-700 rounded"
+              >
+                Отмена
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-1 bg-purple-600 hover:bg-purple-700 rounded"
+              >
+                Добавить
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* ═════════════ MODAL add item ═════════════ */}
+      {showItemModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <form
+            onSubmit={handleAddItem}
+            className="bg-zinc-900 p-6 rounded-xl w-96 space-y-3"
+          >
+            <h4 className="text-lg font-bold mb-1">Новый товар</h4>
+
+            <input
+              placeholder="Название"
+              value={newItem.name}
+              onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
+              className="w-full px-3 py-2 rounded bg-zinc-800"
+              required
+            />
+            <input
+              type="number"
+              placeholder="Цена"
+              value={newItem.price}
+              onChange={(e) => setNewItem({ ...newItem, price: e.target.value })}
+              className="w-full px-3 py-2 rounded bg-zinc-800"
+              required
+            />
+            <input
+              placeholder="Картинка (URL)"
+              value={newItem.image_url}
+              onChange={(e) => setNewItem({ ...newItem, image_url: e.target.value })}
+              className="w-full px-3 py-2 rounded bg-zinc-800"
+            />
+            <textarea
+              placeholder="Описание"
+              value={newItem.description}
+              onChange={(e) => setNewItem({ ...newItem, description: e.target.value })}
+              className="w-full h-24 px-3 py-2 rounded bg-zinc-800 resize-none"
+            />
+
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowItemModal(false)}
                 className="px-4 py-1 bg-zinc-700 rounded"
               >
                 Отмена
