@@ -1,32 +1,69 @@
-function ConfirmModal({ item, onConfirm, onClose, role }) {
-  if (!item) return null
+import { motion, AnimatePresence } from 'framer-motion';
 
-  const getCurrencyName = (role) => {
-    switch (role) {
-      case 'Гос': return 'Scam-Coin'
-      case 'Закрывающий': return 'Scam-Coin'
-      default: return 'Scam-Coin'
-    }
-  }
+/**
+ * props:
+ *   open        — boolean
+ *   item        — { id, name, price, image_url, description }
+ *   onConfirm   — () => void
+ *   onClose     — () => void
+ */
+function ConfirmModal({ open, item, onConfirm, onClose }) {
+  if (!open || !item) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 fade-in">
-      <div className="bg-gray-900 border border-purple-600 p-6 rounded-xl shadow-xl w-full max-w-md glow-card">
-        <h2 className="text-xl font-bold text-white mb-4">Подтверждение покупки</h2>
-        <p className="text-gray-300 mb-4">
-          Вы точно хотите купить{' '}
-          <span className="text-white font-semibold">{item.name}</span> за{' '}
-          <span className="text-purple-400 font-semibold">
-            {item.price} {getCurrencyName(role)}
-          </span>?
-        </p>
-        <div className="flex justify-end gap-4">
-          <button onClick={onClose} className="btn btn-danger">Отмена</button>
-          <button onClick={onConfirm} className="btn btn-primary">Купить</button>
-        </div>
-      </div>
-    </div>
-  )
+    <AnimatePresence>
+      <motion.div
+        key="backdrop"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.9 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black/80 flex items-center justify-center z-50"
+        onClick={onClose}
+      >
+        <motion.div
+          key="modal"
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1,   opacity: 1 }}
+          exit={{   scale: 0.8, opacity: 0 }}
+          transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+          className="bg-zinc-900 rounded-2xl p-6 w-full max-w-md shadow-lg cursor-auto"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* картинка */}
+          <img
+            src={item.image_url || '/placeholder.png'}
+            alt={item.name}
+            className="w-full h-56 object-cover rounded-xl mb-4"
+          />
+          {/* название & цена */}
+          <h3 className="text-2xl font-bold">{item.name}</h3>
+          <p className="text-purple-400 mb-2">{item.price} ScamCoin</p>
+          {/* описание */}
+          {item.description && (
+            <p className="text-zinc-400 text-sm mb-4 whitespace-pre-wrap">
+              {item.description}
+            </p>
+          )}
+
+          {/* кнопки */}
+          <div className="flex justify-end gap-4">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 rounded"
+            >
+              Отмена
+            </button>
+            <button
+              onClick={() => { onConfirm(item.id); onClose(); }}
+              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded"
+            >
+              Купить
+            </button>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
 }
 
-export default ConfirmModal
+export default ConfirmModal;

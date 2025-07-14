@@ -5,35 +5,22 @@ import ConfirmModal from './ConfirmModal';
  * Магазин товаров.
  *
  * props:
- *  • items  — массив товаров [{ id, name, price, image_url, description }]
- *  • onBuy  — async-функция (itemId) => Promise (приходит из App.jsx)
- *  • role   — роль пользователя (для названия валюты)
+ *   • items  — [{ id, name, price, image_url, description }]
+ *   • onBuy  — (itemId) => Promise
+ *   • role   — роль пользователя (чтобы подписать валюту)
  */
 function Shop({ items, onBuy, role }) {
-  /** товар, который пользователь пытается купить (null = модалка закрыта) */
+  /* товар, выбранный для покупки; null => модалка закрыта */
   const [selectedItem, setSelectedItem] = useState(null);
 
-  /** название валюты зависит от роли */
-  const getCurrencyName = (role) => {
-    switch (role) {
-      case 'Гос':
-        return 'Scam-Coin';
-      case 'Закрывающий':
-        return 'Scam-Coin';
-      default:
-        return 'Scam-Coin';
-    }
-  };
+  const currency = role ? 'Scam-Coin' : 'Scam-Coin'; // можно расширить
 
-  /** подтверждение покупки в модалке */
+  /* подтвердить покупку */
   const handleConfirm = async () => {
     if (!selectedItem) return;
-    await onBuy(selectedItem.id);   // вызываем колбэк из App.jsx
-    setSelectedItem(null);          // закрываем окно
+    await onBuy(selectedItem.id);
+    setSelectedItem(null);
   };
-
-  /** закрыть модалку без покупки */
-  const handleClose = () => setSelectedItem(null);
 
   return (
     <div className="fade-in max-w-5xl mx-auto">
@@ -41,28 +28,28 @@ function Shop({ items, onBuy, role }) {
         🛍 Магазин
       </h2>
 
-      {/* Сетка карточек товаров */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        {items.map((item) => (
+        {items.map((it) => (
           <div
-            key={item.id}
+            key={it.id}
             className="bg-zinc-800 rounded-xl p-4 border border-zinc-700 shadow-md flex flex-col max-w-sm mx-auto"
           >
             <img
-              src={item.image_url}
-              alt={item.name}
+              src={it.image_url}
+              alt={it.name}
               className="rounded-md mb-2 h-40 object-contain"
             />
-            <h3 className="text-lg font-bold text-purple-300">{item.name}</h3>
-            <p className="text-sm text-gray-400 mb-2">{item.description}</p>
-
-            <p className="text-green-400 font-bold mb-4">
-              {item.price} {getCurrencyName(role)}
+            <h3 className="text-lg font-bold text-purple-300">{it.name}</h3>
+            <p className="text-sm text-gray-400 mb-2 line-clamp-2">
+              {it.description}
             </p>
 
-            {/* Кнопка теперь только открывает ConfirmModal */}
+            <p className="text-green-400 font-bold mb-4">
+              {it.price} {currency}
+            </p>
+
             <button
-              onClick={() => setSelectedItem(item)}
+              onClick={() => setSelectedItem(it)}
               className="btn btn-primary mt-auto"
             >
               Купить
@@ -71,12 +58,12 @@ function Shop({ items, onBuy, role }) {
         ))}
       </div>
 
-      {/* Модальное окно подтверждения */}
+      {/* модальное окно */}
       <ConfirmModal
+        open={!!selectedItem}
         item={selectedItem}
-        role={role}
         onConfirm={handleConfirm}
-        onClose={handleClose}
+        onClose={() => setSelectedItem(null)}
       />
     </div>
   );
