@@ -1,91 +1,108 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
-const Profile = ({ user, onUpdate }) => {
-  const [newName, setNewName] = useState(user.name);
-  const [passwords, setPasswords] = useState({ current: '', new: '' });
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
-  const handleNameChange = async () => {
-    const res = await fetch(`/api/profile/name`, {
+function Profile({ user, onUpdate }) {
+  const [name,     setName]     = useState(user.name || '');
+  const [curPwd,   setCurPwd]   = useState('');
+  const [newPwd,   setNewPwd]   = useState('');
+  const [msg,      setMsg]      = useState('');
+
+  const token = localStorage.getItem('token');
+  const auth  = { Authorization: `Bearer ${token}` };
+
+  /* ───── смена имени ───── */
+  const changeName = async (e) => {
+    e.preventDefault();
+    if (name === user.name) return;
+
+    const res = await fetch(`${API_URL}/users/${user.id}`, {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
-      body: JSON.stringify({ name: newName }),
+      headers: { 'Content-Type': 'application/json', ...auth },
+      body: JSON.stringify({ name }),
     });
     if (res.ok) {
-      onUpdate({ name: newName });
+      const { user: updated } = await res.json();
+      onUpdate(updated);          // обновляем App
+      setMsg('Имя обновлено');
+      setTimeout(() => setMsg(''), 2500);
     }
   };
 
-  const handlePasswordChange = async () => {
-    const res = await fetch(`/api/profile/password`, {
+  /* ───── смена пароля ───── */
+  const changePassword = async (e) => {
+    e.preventDefault();
+    if (!curPwd || !newPwd) return;
+
+    const res = await fetch(`${API_URL}/users/${user.id}/password`, {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
-      body: JSON.stringify(passwords),
+      headers: { 'Content-Type': 'application/json', ...auth },
+      body: JSON.stringify({ currentPassword: curPwd, newPassword: newPwd }),
     });
+    const data = await res.json();
     if (res.ok) {
-      setPasswords({ current: '', new: '' });
-    }
+      setMsg('Пароль изменён');
+      setCurPwd('');
+      setNewPwd('');
+    } else setMsg(data.error || 'Ошибка смены пароля');
+    setTimeout(() => setMsg(''), 2500);
   };
 
   return (
-    <div className="max-w-xl mx-auto space-y-8">
-      <div>
-        <h2 className="text-xl font-semibold mb-2">Ваш профиль</h2>
-        <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-700">
-          <div className="mb-3">
-            <label className="block text-sm text-zinc-400 mb-1">Имя</label>
-            <input
-              type="text"
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              className="w-full px-3 py-2 rounded bg-zinc-800 border border-zinc-600 text-white text-sm"
-            />
-          </div>
-          <button
-            onClick={handleNameChange}
-            className="bg-purple-700 hover:bg-purple-800 text-white px-4 py-2 rounded text-sm"
-          >
-            Сохранить имя
-          </button>
-        </div>
-      </div>
+    <div className="space-y-8 max-w-sm mx-auto">
 
-      <div>
-        <h2 className="text-xl font-semibold mb-2">Сменить пароль</h2>
-        <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-700 space-y-3">
-          <div>
-            <label className="block text-sm text-zinc-400 mb-1">Текущий пароль</label>
-            <input
-              type="password"
-              value={passwords.current}
-              onChange={(e) => setPasswords({ ...passwords, current: e.target.value })}
-              className="w-full px-3 py-2 rounded bg-zinc-800 border border-zinc-600 text-white text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-sm text-zinc-400 mb-1">Новый пароль</label>
-            <input
-              type="password"
-              value={passwords.new}
-              onChange={(e) => setPasswords({ ...passwords, new: e.target.value })}
-              className="w-full px-3 py-2 rounded bg-zinc-800 border border-zinc-600 text-white text-sm"
-            />
-          </div>
-          <button
-            onClick={handlePasswordChange}
-            className="bg-purple-700 hover:bg-purple-800 text-white px-4 py-2 rounded text-sm"
-          >
-            Сменить пароль
-          </button>
-        </div>
-      </div>
+      {/* ───────────── Имя ───────────── */}
+      <form onSubmit={changeName} className="space-y-3">
+        <h3 className="font-bold text-lg">Смена имени</h3>
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="w-full px-3 py-2 rounded bg-zinc-800"
+          required
+        />
+        <button
+          type="submit"
+          className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded w-full"
+        >
+          Сохранить
+        </button>
+      </form>
+
+      {/* ───────────── Пароль ───────────── */}
+      <form onSubmit={changePassword} className="space-y-3">
+        <h3 className="font-bold text-lg">Смена пароля</h3>
+        <input
+          type="password"
+          placeholder="Текущий пароль"
+          value={curPwd}
+          onChange={(e) => setCurPwd(e.target.value)}
+          className="w-full px-3 py-2 rounded bg-zinc-800"
+          required
+        />
+        <input
+          type="password"
+          placeholder="Новый пароль"
+          value={newPwd}
+          onChange={(e) => setNewPwd(e.target.value)}
+          className="w-full px-3 py-2 rounded bg-zinc-800"
+          required
+        />
+        <button
+          type="submit"
+          className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded w-full"
+        >
+          Изменить пароль
+        </button>
+      </form>
+
+      {/* ───────────── статус ───────────── */}
+      {msg && (
+        <p className="text-center text-sm text-green-400">
+          {msg}
+        </p>
+      )}
     </div>
   );
-};
+}
 
 export default Profile;
