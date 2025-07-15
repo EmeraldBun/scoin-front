@@ -1,12 +1,14 @@
 import { useState } from 'react';
+import { toast } from 'react-toastify';
 
-/* =========================================================================
- *  AdminPanel
- *    • Users  – список, выдача монет, удаление, добавление
- *    • Items  – список товаров, добавление, удаление
- * ========================================================================= */
+/**
+ * AdminPanel
+ *
+ * props:
+ *  • users, currentUserId, giveCoins, deleteUser, addUser
+ *  • items, deleteItem, addItem
+ */
 function AdminPanel({
-  /* из App.jsx */
   users,
   currentUserId,
   giveCoins,
@@ -33,30 +35,48 @@ function AdminPanel({
     description: '',
     image_url: '',
   });
+  const [file, setFile] = useState(null); // выбранный файл
 
-  /* индивидуальное поле «сколько монет начислить» для каждой строки */
-  const [amounts, setAmounts] = useState({}); // { userId: 100 }
+  const [amounts, setAmounts] = useState({}); // { userId: 150 }
 
   /* ────────── handlers ────────── */
+  const resetUserModal = () => setNewUser({ login: '', password: '', name: '', is_admin: false });
+  const resetItemModal = () => {
+    setNewItem({ name: '', price: '', description: '', image_url: '' });
+    setFile(null);
+  };
+
   const handleAddUser = async (e) => {
     e.preventDefault();
-    await addUser(newUser);
-    setShowUserModal(false);
-    setNewUser({ login: '', password: '', name: '', is_admin: false });
+    const ok = await addUser(newUser);
+    if (ok) {
+      setShowUserModal(false);
+      resetUserModal();
+    }
   };
 
   const handleAddItem = async (e) => {
     e.preventDefault();
-    await addItem({ ...newItem, price: Number(newItem.price) });
-    setShowItemModal(false);
-    setNewItem({ name: '', price: '', description: '', image_url: '' });
+
+    const fd = new FormData();
+    fd.append('name',        newItem.name);
+    fd.append('price',       Number(newItem.price));
+    fd.append('description', newItem.description);
+    if (file)  fd.append('image', file);
+    else       fd.append('image_url', newItem.image_url);
+
+    const ok = await addItem(fd);
+    if (ok) {
+      setShowItemModal(false);
+      resetItemModal();
+    }
   };
 
   /* ========================================================================= */
   return (
     <div className="space-y-10">
 
-      {/* ───────────────── USERS ───────────────── */}
+      {/* ───────────── USERS ───────────── */}
       <section>
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-bold">Пользователи</h3>
@@ -123,7 +143,7 @@ function AdminPanel({
         </table>
       </section>
 
-      {/* ───────────────── ITEMS ───────────────── */}
+      {/* ───────────── ITEMS ───────────── */}
       <section>
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-bold">Товары</h3>
@@ -170,7 +190,7 @@ function AdminPanel({
         </table>
       </section>
 
-      {/* ═════════════ MODAL add user ═════════════ */}
+      {/* ═════════════ MODAL: Add User ═════════════ */}
       {showUserModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
           <form
@@ -214,7 +234,7 @@ function AdminPanel({
             <div className="flex justify-end gap-3 pt-2">
               <button
                 type="button"
-                onClick={() => setShowUserModal(false)}
+                onClick={() => { setShowUserModal(false); resetUserModal(); }}
                 className="px-4 py-1 bg-zinc-700 rounded"
               >
                 Отмена
@@ -230,7 +250,7 @@ function AdminPanel({
         </div>
       )}
 
-      {/* ═════════════ MODAL add item ═════════════ */}
+      {/* ═════════════ MODAL: Add Item ═════════════ */}
       {showItemModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
           <form
@@ -254,23 +274,31 @@ function AdminPanel({
               className="w-full px-3 py-2 rounded bg-zinc-800"
               required
             />
+
             <input
               placeholder="Картинка (URL)"
               value={newItem.image_url}
               onChange={(e) => setNewItem({ ...newItem, image_url: e.target.value })}
               className="w-full px-3 py-2 rounded bg-zinc-800"
             />
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setFile(e.target.files[0] || null)}
+              className="text-sm text-zinc-400"
+            />
+
             <textarea
               placeholder="Описание"
               value={newItem.description}
               onChange={(e) => setNewItem({ ...newItem, description: e.target.value })}
-              className="w-full h-24 px-3 py-2 rounded bg-zinc-800 resize-none"
+              className="w-full h-24 px-3 py-2 rounded resize-none bg-zinc-800"
             />
 
             <div className="flex justify-end gap-3 pt-2">
               <button
                 type="button"
-                onClick={() => setShowItemModal(false)}
+                onClick={() => { setShowItemModal(false); resetItemModal(); }}
                 className="px-4 py-1 bg-zinc-700 rounded"
               >
                 Отмена

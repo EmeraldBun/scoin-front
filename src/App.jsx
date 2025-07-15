@@ -13,167 +13,124 @@ import 'react-toastify/dist/ReactToastify.css';
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 function App() {
-  /* ─────────── глобальный токен ─────────── */
-  const [token, setToken] = useState(() => localStorage.getItem('token') || '');
-
-  /* ─────────── остальное состояние ─────────── */
-  const [user,      setUser]      = useState(null);
-  const [balance,   setBalance]   = useState(0);
-  const [tab,       setTab]       = useState('dashboard');
-  const [items,     setItems]     = useState([]);
+  /* ═════════════  state  ═════════════ */
+  const [token, setToken]       = useState(() => localStorage.getItem('token') || '');
+  const [user, setUser]         = useState(null);
+  const [balance, setBalance]   = useState(0);
+  const [tab, setTab]           = useState('dashboard');
+  const [items, setItems]       = useState([]);
   const [purchases, setPurchases] = useState([]);
-  const [users,     setUsers]     = useState([]);
+  const [users, setUsers]       = useState([]);
 
-  const isAdmin = user?.is_admin;
-  const authHeader = () => ({ Authorization: `Bearer ${token}` });
+  const isAdmin   = user?.is_admin;
+  const authHdr   = () => ({ Authorization: `Bearer ${token}` });
 
-  /* ========== login callback из HeroSection ========== */
-  const handleLogin = ({ token: tkn, user: usr }) => {
-    localStorage.setItem('token', tkn);
-    setToken(tkn);
-    setUser(usr);
-    setBalance(usr.balance);
+  /* ═════════════  login  ═════════════ */
+  const handleLogin = ({ token: t, user: u }) => {
+    localStorage.setItem('token', t);
+    setToken(t);
+    setUser(u);
+    setBalance(u.balance);
   };
 
-  /* подгружаем всё после появления токена */
-  useEffect(() => {
-    if (!token) return;
-    fetchUser();
-    fetchItems();
-    fetchPurchases();
-  }, [token]);
-
-  /* если юзер — админ, тянем список один раз */
-  useEffect(() => {
-    if (user?.is_admin) fetchUsers();
-  }, [user?.is_admin]);
-
-  /* когда открываем вкладку Admin — обновляем список */
-  useEffect(() => {
-    if (tab === 'admin' && user?.is_admin) fetchUsers();
-  }, [tab, user?.is_admin]);
-
-  /* ─────────── helpers ─────────── */
+  /* ═════════════  fetch helpers  ═════════════ */
   const fetchUser = async () => {
-    const res = await fetch(`${API_URL}/me`, { headers: authHeader() });
-    if (res.ok) {
-      const data = await res.json();
-      setUser(data);
-      setBalance(data.balance);
+    const r = await fetch(`${API_URL}/me`, { headers: authHdr() });
+    if (r.ok) {
+      const d = await r.json();
+      setUser(d); setBalance(d.balance);
     }
   };
-
-  const fetchItems = async () => {
-    const res = await fetch(`${API_URL}/items`, { headers: authHeader() });
-    if (res.ok) setItems(await res.json());
+  const fetchItems      = async () => {
+    const r = await fetch(`${API_URL}/items`, { headers: authHdr() });
+    if (r.ok) setItems(await r.json());
+  };
+  const fetchPurchases  = async () => {
+    const r = await fetch(`${API_URL}/my-purchases`, { headers: authHdr() });
+    if (r.ok) setPurchases(await r.json());
+  };
+  const fetchUsers      = async () => {
+    const r = await fetch(`${API_URL}/users`, { headers: authHdr() });
+    if (r.ok) setUsers(await r.json());
   };
 
-  const fetchPurchases = async () => {
-    const res = await fetch(`${API_URL}/my-purchases`, { headers: authHeader() });
-    if (res.ok) setPurchases(await res.json());
-  };
+  /* ═════════════  effects  ═════════════ */
+  useEffect(() => {
+    if (!token) return;
+    fetchUser(); fetchItems(); fetchPurchases();
+  }, [token]);
 
-  const fetchUsers = async () => {
-    const res = await fetch(`${API_URL}/users`, { headers: authHeader() });
-    if (res.ok) setUsers(await res.json());
-  };
+  useEffect(() => { if (user?.is_admin) fetchUsers(); }, [user?.is_admin]);
+  useEffect(() => { if (tab === 'admin' && user?.is_admin) fetchUsers(); }, [tab, user?.is_admin]);
 
-  /* ─────────── actions ─────────── */
+  /* ═════════════  actions  ═════════════ */
   const buyItem = async (itemId) => {
-    const res = await fetch(`${API_URL}/buy`, {
+    const r = await fetch(`${API_URL}/buy`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...authHeader() },
+      headers: { 'Content-Type':'application/json', ...authHdr() },
       body: JSON.stringify({ item_id: itemId }),
     });
-    const data = await res.json();
-    if (res.ok) {
+    const d = await r.json();
+    if (r.ok) {
       toast.success('Покупка успешна!');
-      fetchUser();
-      fetchPurchases();
-      setTab('purchases');
-    } else toast.error(data.error || 'Ошибка покупки');
+      fetchUser(); fetchPurchases(); setTab('purchases');
+    } else toast.error(d.error || 'Ошибка покупки');
   };
 
   const giveCoins = async (id, amount) => {
-    const res = await fetch(`${API_URL}/users/${id}/coins`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...authHeader() },
-      body: JSON.stringify({ amount }),
+    const r = await fetch(`${API_URL}/users/${id}/coins`, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', ...authHdr() },
+      body:JSON.stringify({ amount }),
     });
+    if (!r.ok) return toast.error('Ошибка начисления');
 
-    if (!res.ok) {
-      const { error } = await res.json().catch(() => ({}));
-      toast.error(error || 'Ошибка начисления');
-      return;
-    }
-
-    /* ➊ обновляем список пользователей на лету  */
-    setUsers((prev) =>
-      prev.map((u) =>
-        u.id === id ? { ...u, balance: u.balance + amount } : u
-      )
-    );
-
-    /* ➋ если начислили себе – сразу подтягиваем баланс карточки */
+    /* мгновенно обновляем state */
+    setUsers(p => p.map(u => u.id === id ? { ...u, balance: u.balance + amount } : u));
     if (id === user.id) {
-      setBalance((prev) => prev + amount);
-      setUser((prev) => ({ ...prev, balance: prev.balance + amount }));
+      setBalance(b => b + amount);
+      setUser(u => ({ ...u, balance: u.balance + amount }));
     }
-
-    toast.success(`+${amount} ScamCoin зачислено`);
+    toast.success(`+${amount} ScamCoin`);
   };
 
   const deleteUser = async (id) => {
-    const res = await fetch(`${API_URL}/users/${id}`, {
-      method: 'DELETE',
-      headers: authHeader(),
-    });
-    res.ok ? (toast.success('Удалён'), fetchUsers())
-           : toast.error('Ошибка удаления');
+    const r = await fetch(`${API_URL}/users/${id}`, { method:'DELETE', headers: authHdr() });
+    if (r.ok) {
+      toast.success('Пользователь удалён');
+      setUsers(p => p.filter(u => u.id !== id));
+    } else toast.error('Ошибка удаления');
   };
 
-  /* ------- НОВОЕ: добавление пользователя ------- */
   const addUser = async (form) => {
-    const res = await fetch(`${API_URL}/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...authHeader() },
+    const r = await fetch(`${API_URL}/register`, {
+      method:'POST', headers:{ 'Content-Type':'application/json', ...authHdr() },
       body: JSON.stringify(form),
     });
-    const data = await res.json();
-    res.ok ? (toast.success('Пользователь создан'), fetchUsers())
-           : toast.error(data.error || 'Ошибка регистрации');
+    const d = await r.json();
+    if (r.ok) { toast.success('Пользователь создан'); fetchUsers(); return true; }
+    toast.error(d.error || 'Ошибка регистрации'); return false;
   };
 
-  const addItem = async (item) => {
-    const res = await fetch(`${API_URL}/items`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...authHeader() },
-      body: JSON.stringify(item),
-    });
-    res.ok ? (toast.success('Товар добавлен'), fetchItems())
-           : toast.error('Ошибка добавления');
+  const addItem = async (fd) => {
+    const r = await fetch(`${API_URL}/items`, { method:'POST', headers: authHdr(), body: fd });
+    const d = await r.json().catch(() => ({}));
+    if (r.ok) { toast.success('Товар добавлен'); fetchItems(); return true; }
+    toast.error(d.error || 'Ошибка добавления'); return false;
   };
 
   const deleteItem = async (id) => {
-    const res = await fetch(`${API_URL}/items/${id}`, {
-      method: 'DELETE',
-      headers: authHeader(),
-    });
-    res.ok ? (toast.success('Товар удалён'), fetchItems())
-           : toast.error('Ошибка удаления');
+    const r = await fetch(`${API_URL}/items/${id}`, { method:'DELETE', headers: authHdr() });
+    if (r.ok) { toast.success('Товар удалён'); setItems(p => p.filter(it => it.id !== id)); }
+    else toast.error('Ошибка удаления');
   };
 
-  const updateUserProfile = (u) => setUser((prev) => ({ ...prev, ...u }));
+  const updateUserProfile = (u) => setUser(p => ({ ...p, ...u }));
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    location.reload();
-  };
+  const handleLogout = () => { localStorage.removeItem('token'); location.reload(); };
 
-  /* ─────────── render ─────────── */
-  if (!token || !user) {
-    return <HeroSection onLogin={handleLogin} />;
-  }
+  /* ═════════════  render  ═════════════ */
+  if (!token || !user) return <HeroSection onLogin={handleLogin} />;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-black to-gray-900 text-white p-4 font-mono">
@@ -183,9 +140,9 @@ function App() {
         <NavTabs currentTab={tab} setTab={setTab} isAdmin={isAdmin} />
 
         {tab === 'dashboard' && <HeroSection name={user.name} />}
-        {tab === 'shop'       && <Shop      items={items}      onBuy={buyItem} />}
-        {tab === 'purchases'  && <Purchases purchases={purchases} />}
-        {tab === 'profile'    && <Profile   user={user}        onUpdate={updateUserProfile} />}
+        {tab === 'shop'       && <Shop       items={items} onBuy={buyItem} />}
+        {tab === 'purchases'  && <Purchases  purchases={purchases} />}
+        {tab === 'profile'    && <Profile    user={user} onUpdate={updateUserProfile} />}
         {tab === 'admin' && isAdmin && (
           <AdminPanel
             users={users}
